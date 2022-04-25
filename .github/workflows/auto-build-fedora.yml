@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v2
         
       - name: Patching Installers
-      - run: |            
+        run: |            
           git config user.name "hurrhnn"
           git config user.email "20sunrin022@sunrint.hs.kr"
           
@@ -26,7 +26,7 @@ jobs:
           ./installer_patch.sh
           
       - name: Building Kernels
-      - run: |
+        run: |
           ./installer.sh install
       
       - name: Uploading Kernels
