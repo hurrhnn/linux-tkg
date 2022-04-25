@@ -1,7 +1,5 @@
 name: Automatic version bumping
 on:
-  schedule:
-    - cron: '3 */6 * * *'
   workflow_dispatch:
 
 jobs:
