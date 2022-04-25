@@ -1,0 +1,14 @@
+name: Automatic fetch upstream
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # every 30 minutes
+  workflow_dispatch:      
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sending an API Request
+        run: |
+          curl -X POST -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.PRIVATE_TOKEN }}" https://api.github.com/repos/hurrhnn/linux-tkg-actions/merge-upstream -d '{"branch":"master"}'
