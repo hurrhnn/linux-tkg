@@ -626,7 +626,7 @@ case $_basever in
             'c8f7c50d9b1418ba22b5ca735c47111a162be416109714d26a674162e5b2cb97'
             '63a2ddf7ca9d3922f4eac3ac66bc37ffb10ad8b18b3e596832d3faa66b93dfa6'
             '00b452910c68fba6dcebbf6c064beff565b2c60ac07a9c1a3375b8bf0354911f'
-            '68659b54bd0c0539c22869feea8017faf947af6883d75c00089f2bfd9f265f8e'
+            '980be21d8b6a014752ea094fd996da3c8a25f5c38020e0d704b7f9d3181a5d9e'
             '9fad4a40449e09522899955762c8928ae17f4cdaa16e01239fd12592e9d58177'
             '978b197efa56781a1d5651a3649c3d8b926d55748b4b9063788dfe1a861fc1bc'
             '930996cdd9b63e3456cc49da4015631717c1c2ec41f879b25a9100e95e0b38fb'
@@ -706,7 +706,7 @@ case $_basever in
         #0007-v5.16-fsync.patch
         0007-v5.17-fsync1_via_futex_waitv.patch
         0007-v5.17-winesync.patch
-        #0008-5.14-bcachefs.patch
+        0008-5.17-bcachefs.patch
         0009-glitched-ondemand-bmq.patch
         0009-glitched-bmq.patch
         0009-prjc_v5.17-r0.patch
@@ -718,7 +718,7 @@ case $_basever in
     )
     sha256sums=('555fef61dddb591a83d62dd04e252792f9af4ba9ef14683f64840e46fa20b1b1'
             '2c249d6ecebe7aa2fd5ac8bde8a313a033659ad1fbeeab1d04659e4d814b7bb9'
-            '56a0ef6e05f59fbf45af0c01c506793aa7fae8d9b6d26d8fe3e8f7e95cf6f0cb'
+            '7ae1ad6d552290aec9701167e705417cebcc861a3de527b4c9f234ece248f334'
             '1e15fc2ef3fa770217ecc63a220e5df2ddbcf3295eb4a021171e7edd4c6cc898'
             '66a03c246037451a77b4d448565b1d7e9368270c7d02872fbd0b5d024ed0a997'
             'f6383abef027fd9a430fd33415355e0df492cdc3c90e9938bf2d98f4f63b32e6'
@@ -731,6 +731,7 @@ case $_basever in
             #'4503034f211de3013f8500106da753e5d1bcac14bc5576671cbe6f574805b3cd'
             '9df628fd530950e37d31da854cb314d536f33c83935adf5c47e71266a55f7004'
             '4a52785cca539b37c1250e6e6776dda13dc43bb6ec8991b7c1ed3bff42e289d7'
+            'ea4902ab59798481dcf9ecb04570c347dd8eff1179105c45563649c7a901da3f'
             '9fad4a40449e09522899955762c8928ae17f4cdaa16e01239fd12592e9d58177'
             'a557b342111849a5f920bbe1c129f3ff1fc1eff62c6bd6685e0972fc88e39911'
             'ba65acd3f1168a7479e3665b5b13f7d1066e713eadb5a0e5110423ba97d7ccd3'
@@ -757,7 +758,7 @@ case $_basever in
         0006-add-acs-overrides_iommu.patch
         0007-v5.18-fsync1_via_futex_waitv.patch
         0007-v5.18-winesync.patch
-        #0008-5.14-bcachefs.patch
+        0008-5.18-bcachefs.patch
         0009-glitched-ondemand-bmq.patch
         0009-glitched-bmq.patch
         0009-prjc_v5.18-r1.patch
@@ -781,6 +782,7 @@ case $_basever in
             '19661ec0d39f9663452b34433214c755179894528bf73a42f6ba52ccf572832a'
             '9df628fd530950e37d31da854cb314d536f33c83935adf5c47e71266a55f7004'
             '057631ecc148b41e0037d200a69cbbfbed8cdcf27eede3d8cd6936566b6ebc68'
+            '0cc7ec0600764a74d6176efb709223ea655e3462c6ef343d209492d9a308249c'
             '9fad4a40449e09522899955762c8928ae17f4cdaa16e01239fd12592e9d58177'
             'a557b342111849a5f920bbe1c129f3ff1fc1eff62c6bd6685e0972fc88e39911'
             '766658d5ec9cf204635f735a8927854991d0133b2e34bdcd9ca36d7e34817e27'
