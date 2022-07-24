@@ -59,7 +59,7 @@ else
 fi
 pkgname=("${pkgbase}" "${pkgbase}-headers")
 pkgver="${_basekernel}"."${_sub}"
-pkgrel=264
+pkgrel=265
 pkgdesc='Linux-tkg'
 arch=('x86_64') # no i686 in here
 url="https://www.kernel.org/"
@@ -762,6 +762,7 @@ case $_basever in
         0009-glitched-ondemand-bmq.patch
         0009-glitched-bmq.patch
         0009-prjc_v5.18-r2.patch
+        0010-lru_5.18.patch
         #0012-linux-hardened.patch
         0012-misc-additions.patch
         # MM Dirty Soft for WRITE_WATCH support in Wine
@@ -770,7 +771,7 @@ case $_basever in
     )
     sha256sums=('51f3f1684a896e797182a0907299cc1f0ff5e5b51dd9a55478ae63a409855cee'
             'ca271cc90dcfa74dab8266087cf25978bc42edc62f314f1e297bad1508c9264b'
-            '382aa201a6a6939210dd8668ab052724547b4bd489b38e97502bbd0848061b35'
+            '6f0fd44dd87dd0ad23f782a26752bb7200d0d163e3a50df6ad3cf5cec7fe948e'
             '1e15fc2ef3fa770217ecc63a220e5df2ddbcf3295eb4a021171e7edd4c6cc898'
             '66a03c246037451a77b4d448565b1d7e9368270c7d02872fbd0b5d024ed0a997'
             'f6383abef027fd9a430fd33415355e0df492cdc3c90e9938bf2d98f4f63b32e6'
@@ -786,6 +787,7 @@ case $_basever in
             '9fad4a40449e09522899955762c8928ae17f4cdaa16e01239fd12592e9d58177'
             'a557b342111849a5f920bbe1c129f3ff1fc1eff62c6bd6685e0972fc88e39911'
             'bb8a2daf56a513701895f67dc0e6cbde153481fcd0557906af45523d24aa9f76'
+            '55f633da855b9346bfcfc5204f109eca6d0d7532ad42dec131ea0d64a0d4fd08'
             '428517fbcb161a640b53782000c16f797c2ad27cf2758e7e56133fc62d2d113b'
             '1b656ad96004f27e9dc63d7f430b50d5c48510d6d4cd595a81c24b21adb70313'
             'b0319a7dff9c48b2f3e3d3597ee154bf92223149a633a8b7ce4026252db86da6')
@@ -812,6 +814,7 @@ case $_basever in
         0009-glitched-ondemand-bmq.patch
         0009-glitched-bmq.patch
         0009-prjc_v5.19-r0.patch
+        0010-lru_5.19.patch
         #0012-linux-hardened.patch
         0012-misc-additions.patch
         # MM Dirty Soft for WRITE_WATCH support in Wine
@@ -836,6 +839,7 @@ case $_basever in
             '9fad4a40449e09522899955762c8928ae17f4cdaa16e01239fd12592e9d58177'
             'a557b342111849a5f920bbe1c129f3ff1fc1eff62c6bd6685e0972fc88e39911'
             'b9822a7f912a46196facb9e70229b90357fbc7c7c1dfe23a407e1cb014add30d'
+            '970819d5a6eca65b9eeb7c459a8bd487600a10b2b02fed323f7456f483c7d5ce'
             '213ecf1ba59dc87ed1844c3473d575b85ffe3a567f86735e8c6239c92dbbb493'
             '1b656ad96004f27e9dc63d7f430b50d5c48510d6d4cd595a81c24b21adb70313'
             'b0319a7dff9c48b2f3e3d3597ee154bf92223149a633a8b7ce4026252db86da6')
