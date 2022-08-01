@@ -19,7 +19,7 @@ jobs:
           git config user.email "20sunrin022@sunrint.hs.kr"
          
           mkdir -p ~/.config/frogminer/
-          wget -O ~/.config/frogminer/linux-tkg.cfg https://gist.githubusercontent.com/hurrhnn/107287da8da308e050aae354283d6dc5/raw/335cb7f89d59f33d9b27224f59159ad56b648e0d/linux-tkg.cfg
+          wget -O ~/.config/frogminer/linux-tkg.cfg https://gist.githubusercontent.com/hurrhnn/107287da8da308e050aae354283d6dc5/raw/6cd113939117cfd52ed5d3c6c542b0991155dacb/linux-tkg.cfg
           wget https://gist.githubusercontent.com/hurrhnn/b10f4194fd2729b27946cb472ecaaedb/raw/a84557948332ad6e10f931c5e48e6825e76d7dfc/determine_version.sh
           wget https://gist.githubusercontent.com/hurrhnn/71d451fb4bf773316a21aba41e88e355/raw/4d663a5674e63d2812f14c7c67064fcb01e88d21/determine_distros.sh
           wget https://gist.githubusercontent.com/hurrhnn/c89ed04c08d193fdfb71ccb0052c7d18/raw/eae9b3e5b7fc75b4c846669a2ed4c64740c10972/installer_patch.sh
