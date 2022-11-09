@@ -197,24 +197,3 @@ jobs:
         with:
           name: kernel-packages-${{ env._cpusched }}
           path: ${{ env.PKGDEST }}/linux*.pkg.tar.zst
-
-  make-release:
-
-    runs-on: ubuntu-latest
-
-    needs: [check-for-newer-kernel, "build-pds", "build-cfs", "build-bmq"]
-    steps:
-      - name: Download release artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: ${{ env.PKGDEST }}
-
-      - name: Make new release
-        uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ needs.check-for-newer-kernel.outputs.latest_kernel }}
-          prerelease: false
-          title: "${{ needs.check-for-newer-kernel.outputs.latest_kernel }}"
-          files: |
-            ${{ env.PKGDEST }}/kernel-packages-*/*

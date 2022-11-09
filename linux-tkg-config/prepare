@@ -11,6 +11,7 @@ _kernel_git_remotes=(
   ["kernel.org"]="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git"
   ["googlesource.com"]="https://kernel.googlesource.com/pub/scm/linux/kernel/git/stable/linux-stable"
   ["github.com"]="https://github.com/gregkh/linux.git"
+  ["torvalds"]="https://github.com/torvalds/linux.git"
 )
 
 _git_remote_names=( "${!_kernel_git_remotes[@]}" )
@@ -35,40 +36,18 @@ for _key in "${_current_kernels[@]}" "${_eol_kernels[@]}"; do
   _kver_latest_tags_map[$_key]=$(echo "$_kernel_tags" | grep -F "v$_key" | tail -1 | cut -c1-)
 done
 
-# only used by workflow trigger script
-typeset -Ag _kver_subver_map
-_kver_subver_map=(
-  ["5.4"]="214"
-  ["5.7"]="19"
-  ["5.8"]="18"
-  ["5.9"]="16"
-  ["5.10"]="144"
-  ["5.11"]="22"
-  ["5.12"]="19"
-  ["5.13"]="19"
-  ["5.14"]="21"
-  ["5.15"]="69"
-  ["5.16"]="20"
-  ["5.17"]="15"
-  ["5.18"]="19"
-  ["5.19"]="10"
-  ["6.0"]="rc6"
-)
-
-
-
 # PREEMPT_RT's supported kernel subversion
 typeset -Ag _rt_subver_map
 _rt_subver_map=(
-  ["5.4"]="223"
+  ["5.4"]="209"
   ["5.9"]="1"
   ["5.10"]="153"
   ["5.11"]="4"
   ["5.14"]="2"
-  ["5.15"]="77"
+  ["5.15"]="76"
   ["5.16"]="2"
   ["5.17"]="1"
-  ["6.0"]="7"
+  ["6.0"]="5"
   ["6.1"]="rc3"
 )
 
@@ -76,16 +55,16 @@ _rt_subver_map=(
 # We separated this to allow for forcing the application of the patch when _preempt_rt_force=1 on version mismatch
 typeset -Ag _rt_rev_map
 _rt_rev_map=(
-  ["5.4"]="209"
+  ["5.4"]="77"
   ["5.9"]="20"
-  ["5.10"]="153"
+  ["5.10"]="76"
   ["5.11"]="11"
   ["5.14"]="21"
-  ["5.15"]="76"
+  ["5.15"]="53"
   ["5.16"]="19"
   ["5.17"]="17"
-  ["6.0"]="5"
-  ["6.1"]="rc3"
+  ["6.0"]="14"
+  ["6.1"]="2"
 )
 
 _undefine() {
@@ -301,7 +280,8 @@ _set_cpu_scheduler() {
   elif [ "$_kver" = "519" ]; then
     _avail_cpu_scheds=("cfs" "pds" "bmq" "cacule" "tt" "bore")
   elif [ "$_kver" = "600" ]; then
-    _avail_cpu_scheds=("cfs" "tt" "bore")
+    _avail_cpu_scheds=("cfs" "pds" "bmq" "tt" "bore")
+    _projectc_unoff="1"
   elif [ "$_kver" = "601" ]; then
     _avail_cpu_scheds=("cfs" "bore")
   else
@@ -309,13 +289,22 @@ _set_cpu_scheduler() {
   fi
 
   if [ "${_preempt_rt}" = "1" ]; then
-    _avail_cpu_scheds=("cfs")
+    warning "! Since you have enabled _preempt_rt, incompatible cpu schedulers will not be available !"
+    if [[ "${_avail_cpu_scheds[*]}" =~ "bore" ]]; then
+      _avail_cpu_scheds=("cfs" "bore")
+    else
+      _avail_cpu_scheds=("cfs")
+    fi
   fi
 
   # Populate descriptions of the available CPU schedulers
   _avail_cpu_scheds_text=()
   for _sched in "${_avail_cpu_scheds[@]}"; do
-    _avail_cpu_scheds_text+=("${_sched_description_array[$_sched]}")
+    if [ "$_sched" = "pds" ] || [ "$_sched" = "bmq" ] && [ "$_projectc_unoff" = "1" ]; then
+      _avail_cpu_scheds_text+=("Project C / ${_sched^^} (unofficial port - ! possibly unstable !)")
+    else
+      _avail_cpu_scheds_text+=("${_sched_description_array[$_sched]}")
+    fi
   done
 
   if ! [[ ${_avail_cpu_scheds[*]} =~ "$_cpusched" ]]; then
@@ -438,6 +427,7 @@ _linux_git_branch_checkout() {
       msg2 "master branch doesn't locally exist, shallow cloning..."
       git remote set-branches --add kernel.org master
       git remote set-branches --add googlesource.com master
+      git remote set-branches --add torvalds master
       git fetch --depth=1 $_git_mirror master
       git fetch --depth 1 $_git_mirror tag "$_kernel_git_tag"
       git checkout -b master-${_git_mirror} ${_git_mirror}/master
@@ -455,6 +445,7 @@ _linux_git_branch_checkout() {
       msg2 "${_basekernel}.y branch doesn't locally exist, shallow cloning..."
       git remote set-branches --add kernel.org linux-${_basekernel}.y
       git remote set-branches --add googlesource.com linux-${_basekernel}.y
+      git remote set-branches --add torvalds linux-${_basekernel}.y
       git fetch --depth=1 $_git_mirror linux-${_basekernel}.y
       git fetch --depth=1 $_git_mirror tag "$_kernel_git_tag"
       git checkout -b linux-${_basekernel}-${_git_mirror} ${_git_mirror}/linux-${_basekernel}.y
@@ -656,8 +647,13 @@ _tkg_srcprep() {
     if [ ${_rt_subver_map[$_basekernel]+_} = "_" ]; then
       preempt_rt_ksubver="${_rt_subver_map[$_basekernel]}"
       # Check if subversion is supported, skip check if forced
-      if [ "${_preempt_rt_force}" = "1" ] || [ "${preempt_rt_ksubver}" = "${_kver_subver_map[$_basekernel]}" ]; then
-        preempt_rt_file_gz="patch-${_basekernel}.${preempt_rt_ksubver}-rt${_rt_rev_map["$_basekernel"]}.patch.gz"
+      if [ "${_preempt_rt_force}" = "1" ] || [ "${preempt_rt_ksubver}" = "${_sub}" ]; then
+        if [[ "${_sub}" == *rc* ]]; then
+          _separator="-"
+        else
+          _separator="."
+        fi
+        preempt_rt_file_gz="patch-${_basekernel}${_separator}${preempt_rt_ksubver}-rt${_rt_rev_map["$_basekernel"]}.patch.gz"
         preempt_rt_file=`basename ${preempt_rt_file_gz} .gz`
         curl "https://cdn.kernel.org/pub/linux/kernel/projects/rt/${_basekernel}/${preempt_rt_file_gz}" > "$srcdir"/"${preempt_rt_file_gz}"
         last_pwd=`pwd`
@@ -667,10 +663,10 @@ _tkg_srcprep() {
         tkgpatch="$srcdir/${preempt_rt_file}"
         _msg="Applying PREEMPT_RT patch" && _tkg_patcher
       else
-        msg2 "Skipping PREEMPT_RT patch for ${_basekernel}.${_sub}"
+        warning "Skipping PREEMPT_RT patch for ${_basekernel}.${_sub} (last known good ${_basekernel}.${preempt_rt_ksubver})"
       fi
     else
-      msg2 "Skipping PREEMPT_RT patch on unsupported kernel version"
+      warning "Skipping PREEMPT_RT patch on unsupported kernel version"
     fi
   fi
 
@@ -682,6 +678,11 @@ _tkg_srcprep() {
 
   tkgpatch="$srcdir/0003-glitched-base.patch"
   _msg="Applying glitched base patch" && _tkg_patcher
+
+  if [ "${_preempt_rt}" != "1" ]; then
+    tkgpatch="$srcdir/0003-glitched-base-nonrt.patch"
+    _msg="Applying glitched base non-rt additions patch" && _tkg_patcher
+  fi
 
   if [[ "$_distro" =~ ^(Fedora|Suse)$ ]]; then
     tkgpatch="$srcdir/0013-fedora-rpm.patch"
