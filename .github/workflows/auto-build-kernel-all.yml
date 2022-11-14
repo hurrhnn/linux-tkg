@@ -1,0 +1,357 @@
+name: Latest Kernel for Various Distribution
+on:
+  schedule:
+    - cron: '17 */12 * * *' # “At minute 17 past every 12th hour.”
+  push:
+    branches:    
+      - 'master'
+  workflow_dispatch:
+
+env:
+  _anbox: "true"
+  _processor_opt: "generic"
+  PKGDEST: "/tmp/linux-tkg"
+  _debugdisable: "true"
+  # _modprobeddb: "true"
+  # _modprobeddb_db_path: ${{ github.workspace }}/modprobed.db
+
+jobs:
+  check-for-newer-kernel:
+    runs-on: ubuntu-latest
+
+    outputs:
+      new_kernel: ${{ steps.check_for_new_kernel.outputs.new_kernel }}
+      latest_kernel: ${{ steps.check_for_new_kernel.outputs.latest_kernel }}
+
+    steps:
+      - name: Checkount linux-tkg
+        uses: actions/checkout@v3.0.2
+
+      # Get latest release in repo, so we compare its version
+      # with the latest kernel available so far
+      - name: Get latest release
+        id: latest_release
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          repository: ${{ github.repository }}
+        # it fails when there's no release
+        continue-on-error: true
+
+      - name: Get latest kernel version
+        id: check_for_new_kernel
+        run: |
+          ./.github/get_latest_kver.sh
+          latest_kernel="$(cat .github/latest-kernel)"
+          echo "::set-output name=latest_kernel::$latest_kernel"
+          new_kernel=0
+          [[ "$latest_kernel" != "$latest_release" ]] || new_kernel=$?
+          echo "::set-output name=new_kernel::$new_kernel"
+        env:
+          latest_release: ${{ steps.latest_release.outputs.release }}
+
+  arch-build-pds:
+    env:
+      _cpusched: "pds"
+
+    # The following code is repeated in each build job
+    # Can be factorized once YAML anchors get implemented in Github
+    # See https://github.com/actions/runner/issues/1182 for status
+
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+
+    needs: ["check-for-newer-kernel"]
+
+    # the == 0 test is for "true" because it tests the exit code of a bash test
+    if: |
+      github.ref == 'refs/heads/master' &&
+      needs.check-for-newer-kernel.outputs.new_kernel == '0'
+
+    steps:
+      # We need to install git so the checkout is done with it
+      - name: Install git
+        run: pacman -Syu --noconfirm git
+
+      - name: Checkout linux-tkg
+        uses: actions/checkout@v3.0.2
+
+      # 1. Install deps needed for building and sudo
+      # 2. create a user "user" and give it passwordless sudo
+      #    and necessary permissions
+      #    because makepkg absolutely refuses to run as root
+      - name: Prepare for makepkg
+        run: |
+          pacman -Syu --noconfirm base-devel sudo
+          useradd user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown user -R ..
+          chown user -R /tmp
+
+      # - name: "[debug] make dummy modprobed-db file for faster ci"
+      #   run: |
+      #     touch "${_modprobeddb_db_path}"
+      #     echo "${_modprobeddb_db_path}"
+
+      - name: Compile Kernel
+        run: su user -c "yes '' | makepkg --noconfirm -s"
+        # run: |
+        #   mkdir -p "$PKGDEST"
+        #   echo "test" > "$PKGDEST"/linux-$_cpusched.pkg.tar.zst
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: kernel-packages-arch-${{ env._cpusched }}
+          path: ${{ env.PKGDEST }}/linux*.pkg.tar.zst
+
+  arch-build-cfs:
+    env:
+      _cpusched: "cfs"
+
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+
+    needs: ["check-for-newer-kernel"]
+    if: |
+      github.ref == 'refs/heads/master' &&
+      needs.check-for-newer-kernel.outputs.new_kernel == '0'
+
+    steps:
+      # We need to install git so the checkout is done with it
+      - name: Install git
+        run: pacman -Syu --noconfirm git
+
+      - name: Checkout linux-tkg
+        uses: actions/checkout@v3.0.2
+
+      # 1. Install deps needed for building and sudo
+      # 2. create a user "user" and give it passwordless sudo
+      #    and necessary permissions
+      #    because makepkg absolutely refuses to run as root
+      - name: Prepare for makepkg
+        run: |
+          pacman -Syu --noconfirm base-devel sudo
+          useradd user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown user -R ..
+          chown user -R /tmp
+
+      # - name: "[debug] make dummy modprobed-db file for faster ci"
+      #   run: |
+      #     touch "${_modprobeddb_db_path}"
+      #     echo "${_modprobeddb_db_path}"
+
+      - name: Compile Kernel
+        run: su user -c "yes '' | makepkg --noconfirm -s"
+        # run: |
+        #   mkdir -p "$PKGDEST"
+        #   echo "test" > "$PKGDEST"/linux-$_cpusched.pkg.tar.zst
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: kernel-packages-arch-${{ env._cpusched }}
+          path: ${{ env.PKGDEST }}/linux*.pkg.tar.zst
+
+  arch-build-bmq:
+    env:
+      _cpusched: "bmq"
+
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+
+    needs: ["check-for-newer-kernel"]
+    if: |
+      github.ref == 'refs/heads/master' &&
+      needs.check-for-newer-kernel.outputs.new_kernel == '0'
+
+    steps:
+      # We need to install git so the checkout is done with it
+      - name: Install git
+        run: pacman -Syu --noconfirm git
+
+      - name: Checkount linux-tkg
+        uses: actions/checkout@v3.0.2
+
+      # 1. Install deps needed for building and sudo
+      # 2. create a user "user" and give it passwordless sudo
+      #    and necessary permissions
+      #    because makepkg absolutely refuses to run as root
+      - name: Prepare for makepkg
+        run: |
+          pacman -Syu --noconfirm base-devel sudo
+          useradd user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown user -R ..
+          chown user -R /tmp
+
+      # - name: "[debug] make dummy modprobed-db file for faster ci"
+      #   run: |
+      #     touch "${_modprobeddb_db_path}"
+      #     echo "${_modprobeddb_db_path}"
+
+      - name: Compile Kernel
+        run: su user -c "yes '' | makepkg --noconfirm -s"
+        # run: |
+        #   mkdir -p "$PKGDEST"
+        #   echo "test" > "$PKGDEST"/linux-$_cpusched.pkg.tar.zst
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: kernel-packages-arch-${{ env._cpusched }}
+          path: ${{ env.PKGDEST }}/linux*.pkg.tar.zst
+
+  rhel-build-cfs:
+    env:
+      _cpusched: "cfs"
+
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+      volumes:
+        - /usr/share/dotnet:/usr/share/dotnet
+        - /opt/ghc:/opt/ghc
+        - /usr/local/share/boost:/usr/local/share/boost
+
+    needs: ["check-for-newer-kernel"]
+    if: |
+      github.ref == 'refs/heads/master' &&
+      needs.check-for-newer-kernel.outputs.new_kernel == '0'
+
+    steps:
+      - name: Installing Prerequisites
+        run: |
+          useradd root -G wheel && echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          dnf install rsync wget sudo sed bash bc binutils bison bzip2 coreutils diffutils dwarves elfutils-devel findutils flex gawk gcc gcc-c++ git glibc-static gzip libkcapi-hmaccalc hostname kmod m4 make net-tools nss-tools openssl-devel perl-Carp perl-devel perl-generators perl-interpreter pesign python3-devel redhat-rpm-config rpm-build tar which xz lz4 bpftool gcc-plugin-devel kernel-rpm-macros -y
+
+      - name: Checking Out Repository
+        uses: actions/checkout@v2
+        
+      - name: Patching Installers
+        run: |
+          git config --global --add safe.directory $(pwd)
+          mkdir -p ~/.config/frogminer/
+          wget -O ~/.config/frogminer/linux-tkg.cfg https://gist.githubusercontent.com/hurrhnn/107287da8da308e050aae354283d6dc5/raw/22e919e50260a255ef10fd8929b62ef79992ecbd/linux-tkg.cfg
+          wget https://gist.githubusercontent.com/hurrhnn/b10f4194fd2729b27946cb472ecaaedb/raw/2096d637a69ec5571e13be9ee7d478885fce39ad/determine_version.sh
+          wget https://gist.githubusercontent.com/hurrhnn/71d451fb4bf773316a21aba41e88e355/raw/4d663a5674e63d2812f14c7c67064fcb01e88d21/determine_distros.sh
+          wget https://gist.githubusercontent.com/hurrhnn/37d8dcc72321e673df872b2a17d9e0ad/raw/2b85e98de4384ca5d87fffa6716d7c6d0e8e4b65/determine_cpusched.sh
+          wget https://gist.githubusercontent.com/hurrhnn/c89ed04c08d193fdfb71ccb0052c7d18/raw/eae9b3e5b7fc75b4c846669a2ed4c64740c10972/installer_patch.sh
+
+          chmod +x *.sh
+
+          ./determine_version.sh
+          ./determine_distros.sh
+          ./determine_cpusched.sh ${{ env._cpusched }}
+          ./installer_patch.sh
+
+      - name: Freeing Disk Space
+        run: |
+          # Workaround to provide additional free space for building.
+          # https://github.com/actions/virtual-environments/issues/2840
+          df -BG
+          sudo rm -rf /usr/share/dotnet/*
+          sudo rm -rf /opt/ghc/*
+          sudo rm -rf /usr/local/share/boost/*
+          sudo rm -rf /__t/*
+          df -BG
+        continue-on-error: true
+          
+      - name: Building Kernels
+        run: |
+          ./install.sh install
+      
+      - name: Uploading Kernels
+        uses: actions/upload-artifact@v3
+        with:
+          name: kernel-packages-fedora-${{ env._cpusched }}
+          path: RPMS/*.rpm
+
+  debuntu-build-cfs:
+    env:
+      _cpusched: "cfs"
+
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:latest
+      volumes:
+        - /usr/share/dotnet:/usr/share/dotnet
+        - /opt/ghc:/opt/ghc
+        - /usr/local/share/boost:/usr/local/share/boost
+
+    needs: ["check-for-newer-kernel"]
+    if: |
+      github.ref == 'refs/heads/master' &&
+      needs.check-for-newer-kernel.outputs.new_kernel == '0'
+
+    steps:
+      - name: Installing Prerequisites
+        run: |
+          echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          apt update -y
+          apt -o DPkg::Options::="--force-confold" install git sudo wget curl unzip tar sed coreutils diffutils patch grep make gcc libncurses-dev gawk flex bison openssl libssl-dev dkms libelf-dev autoconf -y
+
+      - name: Checking Out Repository
+        uses: actions/checkout@v2
+        
+      - name: Patching Installers
+        run: |
+          git config --global --add safe.directory $(pwd)
+          mkdir -p /etc/udev/rules.d/
+          mkdir -p ~/.config/frogminer/
+          wget -O ~/.config/frogminer/linux-tkg.cfg https://gist.githubusercontent.com/hurrhnn/107287da8da308e050aae354283d6dc5/raw/22e919e50260a255ef10fd8929b62ef79992ecbd/linux-tkg.cfg
+          wget https://gist.githubusercontent.com/hurrhnn/b10f4194fd2729b27946cb472ecaaedb/raw/2096d637a69ec5571e13be9ee7d478885fce39ad/determine_version.sh
+          wget https://gist.githubusercontent.com/hurrhnn/71d451fb4bf773316a21aba41e88e355/raw/4d663a5674e63d2812f14c7c67064fcb01e88d21/determine_distros.sh
+          wget https://gist.githubusercontent.com/hurrhnn/37d8dcc72321e673df872b2a17d9e0ad/raw/2b85e98de4384ca5d87fffa6716d7c6d0e8e4b65/determine_cpusched.sh
+          wget https://gist.githubusercontent.com/hurrhnn/c89ed04c08d193fdfb71ccb0052c7d18/raw/eae9b3e5b7fc75b4c846669a2ed4c64740c10972/installer_patch.sh
+
+          chmod +x *.sh
+
+          ./determine_version.sh
+          ./determine_distros.sh
+          ./determine_cpusched.sh ${{ env._cpusched }}
+          ./installer_patch.sh
+
+      - name: Freeing Disk Space
+        run: |
+          # Workaround to provide additional free space for building.
+          # https://github.com/actions/virtual-environments/issues/2840
+          df -BG
+          sudo rm -rf /usr/share/dotnet/*
+          sudo rm -rf /opt/ghc/*
+          sudo rm -rf /usr/local/share/boost/*
+          sudo rm -rf /__t/*
+          df -BG
+        continue-on-error: true
+          
+      - name: Building Kernels
+        run: |
+          ./install.sh install
+      
+      - name: Uploading Kernels
+        uses: actions/upload-artifact@v3
+        with:
+          name: kernel-packages-debuntu-${{ env._cpusched }}
+          path: DEBS/*.deb
+
+  make-release:
+    runs-on: ubuntu-latest
+
+    needs: [check-for-newer-kernel, debuntu-build-cfs, rhel-build-cfs, arch-build-pds, arch-build-cfs, arch-build-bmq]
+    steps:
+      - name: Freeing Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # when set to "true" but frees about 6 GB
+          tool-cache: true
+        continue-on-error: true
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ${{ env.PKGDEST }}
+
+      - name: Make new release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ needs.check-for-newer-kernel.outputs.latest_kernel }}
+          prerelease: false
+          title: "${{ needs.check-for-newer-kernel.outputs.latest_kernel }}"
+          files: |
+            ${{ env.PKGDEST }}/kernel-packages-*/*
