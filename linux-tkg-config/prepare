@@ -896,13 +896,18 @@ _tkg_srcprep() {
     scripts/config --set-val "RCU_BOOST_DELAY" "0"
   fi
   _disable "NTP_PPS" "ZSWAP_COMPRESSOR_DEFAULT_LZO" "PROFILE_ALL_BRANCHES"
-  _enable "CRYPTO_LZ4" "CRYPTO_LZ4HC" "LZ4_COMPRESS" "LZ4HC_COMPRESS" "ZSWAP_COMPRESSOR_DEFAULT_LZ4" "X86_AMD_PSTATE" "AMD_PINCTRL" "CMDLINE_BOOL"
-  _disable "DEBUG_FORCE_FUNCTION_ALIGN_64B" "X86_P6_NOP" "CMDLINE_OVERRIDE"
+  _enable "CRYPTO_LZ4" "CRYPTO_LZ4HC" "LZ4_COMPRESS" "LZ4HC_COMPRESS" "ZSWAP_COMPRESSOR_DEFAULT_LZ4" "X86_AMD_PSTATE" "AMD_PINCTRL"
+  _disable "DEBUG_FORCE_FUNCTION_ALIGN_64B" "X86_P6_NOP"
   scripts/config --set-str "ZSWAP_COMPRESSOR_DEFAULT" "lz4"
-  scripts/config --set-str "CMDLINE" "${_custom_commandline}"
   _enable "CPU_FREQ_DEFAULT_GOV_SCHEDUTIL"
   _disable "CPU_FREQ_DEFAULT_GOV_ONDEMAND" "CPU_FREQ_DEFAULT_GOV_CONSERVATIVE" "CPU_FREQ_DEFAULT_GOV_PERFORMANCE" "CPU_FREQ_DEFAULT_GOV_PERFORMANCE_NODEF"
   _module "BLK_DEV_LOOP"
+
+  if [ -n "$_custom_commandline" ]; then
+    _enable "CMDLINE_BOOL"
+    _disable "CMDLINE_OVERRIDE"
+    scripts/config --set-str "CMDLINE" "${_custom_commandline}"
+  fi
 
   # openrgb
   _module "I2C_NCT6775"
@@ -1606,22 +1611,9 @@ CONFIG_DEBUG_INFO_BTF_MODULES=y\r
   fi
 
   # NR_CPUS
-  if [ -z "$_NR_CPUS_value" ]; then
-    plain ""
-    plain "Set NR_CPUS value to the current host's threads count?"
-    plain "For best results, it should be equal to the maximum number of threads the target machine has."
-    plain "If you want to use the resulting kernel on a machine with more threads, you can hit enter or answer N to use a default of 128."
-    read -rp "`echo $'    > N/y : '`" CONDITION_nrcpus;
-  fi
-  if [[ "$CONDITION_nrcpus" =~ [yY] ]]; then
-    _NR_CPUS_value="$(nproc)"
-  fi
   if [ -n "$_NR_CPUS_value" ]; then
     scripts/config --set-val "NR_CPUS" "$_NR_CPUS_value"
     _enable "FORCE_NR_CPUS"
-  else
-    scripts/config --set-val "NR_CPUS" "128"
-    _disable "FORCE_NR_CPUS"
   fi
 
   fi
