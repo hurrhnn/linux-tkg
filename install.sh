@@ -378,7 +378,7 @@ if [ "$1" = "install" ]; then
 
     msg2 "Installing modules"
     if [ "$_STRIP" = "true" ]; then
-      sudo make modules_install INSTALL_MOD_STRIP="1"
+      sudo make INSTALL_MOD_STRIP=1 modules_install
     else
       sudo make modules_install
     fi
