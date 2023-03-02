@@ -217,7 +217,7 @@ jobs:
       - name: Installing Prerequisites
         run: |
           useradd root -G wheel && echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          dnf install rsync wget sudo sed bash bc binutils bison bzip2 coreutils diffutils dwarves elfutils-devel findutils flex gawk gcc gcc-c++ git glibc-static gzip libkcapi-hmaccalc hostname kmod m4 make net-tools nss-tools openssl-devel perl-Carp perl-devel perl-generators perl-interpreter pesign python3-devel redhat-rpm-config rpm-build tar which xz lz4 bpftool gcc-plugin-devel kernel-rpm-macros -y
+          dnf install perl rsync wget sudo sed bash bc binutils bison bzip2 coreutils diffutils dwarves elfutils-devel findutils flex gawk gcc gcc-c++ git glibc-static gzip libkcapi-hmaccalc hostname kmod m4 make net-tools nss-tools openssl-devel perl-Carp perl-devel perl-generators perl-interpreter pesign python3-devel redhat-rpm-config rpm-build tar which xz lz4 bpftool gcc-plugin-devel kernel-rpm-macros -y
 
       - name: Checking Out Repository
         uses: actions/checkout@v2
