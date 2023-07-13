@@ -226,7 +226,7 @@ jobs:
         run: |
           git config --global --add safe.directory $(pwd)
           mkdir -p ~/.config/frogminer/
-          wget -O ~/.config/frogminer/linux-tkg.cfg https://gist.githubusercontent.com/hurrhnn/107287da8da308e050aae354283d6dc5/raw/cc1bd774de6543b26bf5c19365d182817e7c8d7c/linux-tkg.cfg
+          wget -O ~/.config/frogminer/linux-tkg.cfg https://gist.githubusercontent.com/hurrhnn/107287da8da308e050aae354283d6dc5/raw/6508392233cbf899a12a141475751339099cc9a2/linux-tkg.cfg
           wget https://gist.githubusercontent.com/hurrhnn/b10f4194fd2729b27946cb472ecaaedb/raw/2096d637a69ec5571e13be9ee7d478885fce39ad/determine_version.sh
           wget https://gist.githubusercontent.com/hurrhnn/71d451fb4bf773316a21aba41e88e355/raw/4d663a5674e63d2812f14c7c67064fcb01e88d21/determine_distros.sh
           wget https://gist.githubusercontent.com/hurrhnn/37d8dcc72321e673df872b2a17d9e0ad/raw/2b85e98de4384ca5d87fffa6716d7c6d0e8e4b65/determine_cpusched.sh
@@ -238,6 +238,10 @@ jobs:
           ./determine_distros.sh
           ./determine_cpusched.sh ${{ env._cpusched }}
           ./installer_patch.sh
+
+          # apply fedora flavor
+          wget https://gist.githubusercontent.com/hurrhnn/0250b1f2086c387ac28b69010c969df7/raw/55aff7bce6cbc19a605cc827d0d9a6612f8389ae/config-6.3.12-202.fsync.fc38.x86_64 -O fedora_config
+          sed -i 's/_configfile=""/_configfile="fedora_config"/' ~/.config/frogminer/linux-tkg.cfg
 
       - name: Freeing Disk Space
         run: |
@@ -293,7 +297,7 @@ jobs:
           git config --global --add safe.directory $(pwd)
           mkdir -p /etc/udev/rules.d/
           mkdir -p ~/.config/frogminer/
-          wget -O ~/.config/frogminer/linux-tkg.cfg https://gist.githubusercontent.com/hurrhnn/107287da8da308e050aae354283d6dc5/raw/cc948a85d6c940032ffa425062832324fffb0206/linux-tkg.cfg
+          wget -O ~/.config/frogminer/linux-tkg.cfg https://gist.githubusercontent.com/hurrhnn/107287da8da308e050aae354283d6dc5/raw/6508392233cbf899a12a141475751339099cc9a2/linux-tkg.cfg
           wget https://gist.githubusercontent.com/hurrhnn/b10f4194fd2729b27946cb472ecaaedb/raw/2096d637a69ec5571e13be9ee7d478885fce39ad/determine_version.sh
           wget https://gist.githubusercontent.com/hurrhnn/71d451fb4bf773316a21aba41e88e355/raw/4d663a5674e63d2812f14c7c67064fcb01e88d21/determine_distros.sh
           wget https://gist.githubusercontent.com/hurrhnn/37d8dcc72321e673df872b2a17d9e0ad/raw/2b85e98de4384ca5d87fffa6716d7c6d0e8e4b65/determine_cpusched.sh
