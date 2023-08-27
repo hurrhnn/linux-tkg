@@ -85,10 +85,10 @@ jobs:
           # Workaround to provide additional free space for building.
           # https://github.com/actions/virtual-environments/issues/2840
           df -BG
-          sudo rm -rf /usr/share/dotnet/*
-          sudo rm -rf /opt/ghc/*
-          sudo rm -rf /usr/local/share/boost/*
-          sudo rm -rf /__t/*
+          rm -rf /usr/share/dotnet/*
+          rm -rf /opt/ghc/*
+          rm -rf /usr/local/share/boost/*
+          rm -rf /__t/*
           df -BG
         continue-on-error: true
 
@@ -149,10 +149,10 @@ jobs:
           # Workaround to provide additional free space for building.
           # https://github.com/actions/virtual-environments/issues/2840
           df -BG
-          sudo rm -rf /usr/share/dotnet/*
-          sudo rm -rf /opt/ghc/*
-          sudo rm -rf /usr/local/share/boost/*
-          sudo rm -rf /__t/*
+          rm -rf /usr/share/dotnet/*
+          rm -rf /opt/ghc/*
+          rm -rf /usr/local/share/boost/*
+          rm -rf /__t/*
           df -BG
         continue-on-error: true
 
@@ -213,10 +213,10 @@ jobs:
           # Workaround to provide additional free space for building.
           # https://github.com/actions/virtual-environments/issues/2840
           df -BG
-          sudo rm -rf /usr/share/dotnet/*
-          sudo rm -rf /opt/ghc/*
-          sudo rm -rf /usr/local/share/boost/*
-          sudo rm -rf /__t/*
+          rm -rf /usr/share/dotnet/*
+          rm -rf /opt/ghc/*
+          rm -rf /usr/local/share/boost/*
+          rm -rf /__t/*
           df -BG
         continue-on-error: true
 
