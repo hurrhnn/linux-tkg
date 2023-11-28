@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Stop the script at any ecountered error
+set -e
+
+# save current environment before losing it to the script call
+declare -p -x > current_env
+
 # If current run is not using 'script' for logging, do it
 if [ -z "$SCRIPT" ]; then
   export SCRIPT=1
@@ -11,8 +17,7 @@ if [ -z "$SCRIPT" ]; then
   exit $exit_status
 fi
 
-# Stop the script at any ecountered error
-set -e
+###################### Definition of helper variables and functions
 
 _where=`pwd`
 srcdir="$_where"
@@ -42,7 +47,10 @@ plain() {
  echo -e "$1" >&2
 }
 
-declare -p -x > current_env
+####################################################################
+
+################### Config sourcing
+
 source customization.cfg
 
 if [ -e "$_EXT_CONFIG_PATH" ]; then
@@ -53,6 +61,8 @@ fi
 . current_env
 
 source linux-tkg-config/prepare
+
+####################################################################
 
 _distro_prompt() {
   echo "Which linux distribution are you running ?"
@@ -67,17 +77,13 @@ _install_dependencies() {
   fi
   if [ "$_distro" = "Debian" -o "$_distro" = "Ubuntu" ]; then
     msg2 "Installing dependencies"
-    sudo apt install bc bison build-essential ccache cpio debhelper fakeroot flex git kmod libelf-dev libncurses5-dev libssl-dev lz4 qtbase5-dev rsync schedtool wget zstd ${clang_deps} -y
+    sudo apt install bc bison build-essential ccache cpio fakeroot flex git kmod libelf-dev libncurses5-dev libssl-dev lz4 qtbase5-dev rsync schedtool wget zstd debhelper ${clang_deps} -y
   elif [ "$_distro" = "Fedora" ]; then
     msg2 "Installing dependencies"
-    if [ $(rpm -E %fedora) = "32" ]; then
-      sudo dnf install bison ccache dwarves elfutils-libelf-devel fedora-packager fedpkg flex gcc-c++ git grubby libXi-devel lz4 ncurses-devel openssl-devel pesign qt5-devel rpm-build rpmdevtools schedtool zstd ${clang_deps} -y
-    else
-      sudo dnf install perl bison ccache dwarves elfutils-devel elfutils-libelf-devel fedora-packager fedpkg flex gcc-c++ git grubby libXi-devel lz4 make ncurses-devel openssl openssl-devel perl-devel perl-generators pesign python3-devel qt5-qtbase-devel rpm-build rpmdevtools schedtool zstd -y ${clang_deps} -y
-    fi
+    sudo dnf install perl bison ccache dwarves elfutils-devel elfutils-libelf-devel fedora-packager fedpkg flex gcc-c++ git grubby libXi-devel lz4 make ncurses-devel openssl openssl-devel perl-devel perl-generators pesign python3-devel qt5-qtbase-devel rpm-build rpmdevtools schedtool zstd bc rsync -y ${clang_deps} -y
   elif [ "$_distro" = "Suse" ]; then
     msg2 "Installing dependencies"
-    sudo zypper install -y bc bison ccache dwarves elfutils flex gcc-c++ git libXi-devel libelf-devel libqt5-qtbase-common-devel libqt5-qtbase-devel lz4 make ncurses-devel openssl-devel patch pesign rpm-build rpmdevtools schedtool ${clang_deps}
+    sudo zypper install -y bc bison ccache dwarves elfutils flex gcc-c++ git libXi-devel libelf-devel libqt5-qtbase-common-devel libqt5-qtbase-devel lz4 make ncurses-devel openssl-devel patch pesign rpm-build rpmdevtools schedtool python3 rsync zstd ${clang_deps}
   fi
 }
 
@@ -91,12 +97,6 @@ if [ "$1" != "install" ] && [ "$1" != "config" ] && [ "$1" != "uninstall-help" ]
                     - 'Generic' distro: it uses 'make modules_install' and 'make install', uses 'dracut' to create an initramfs, then updates grub's boot entry.
         - uninstall-help : [RPM and DEB based distros only], lists the installed kernels in this system, then gives hints on how to uninstall them manually."
   exit 0
-fi
-
-# Load external configuration file if present. Available variable values will overwrite customization.cfg ones.
-if [ -e "$_EXT_CONFIG_PATH" ]; then
-  msg2 "External configuration file $_EXT_CONFIG_PATH will be used and will override customization.cfg values."
-  source "$_EXT_CONFIG_PATH"
 fi
 
 if [ "$1" = "install" ] || [ "$1" = "config" ]; then
@@ -241,10 +241,9 @@ if [ "$1" = "install" ]; then
       fi
       _headers_deb="linux-headers-${_kernelname}*.deb"
       _image_deb="linux-image-${_kernelname}_*.deb"
-      _kernel_devel_deb="linux-libc-dev_${_kernelname}*.deb"
 
       cd DEBS
-      sudo dpkg -i $_headers_deb $_image_deb $_kernel_devel_deb
+      sudo dpkg -i $_headers_deb $_image_deb
     fi
 
   elif [[ "$_distro" =~ ^(Fedora|Suse)$ ]]; then
@@ -259,10 +258,10 @@ if [ "$1" = "install" ]; then
       _extra_ver_str="_${_kernel_flavor}"
     fi
 
-    _fedora_work_dir="$_kernel_work_folder_abs/linux-tkg-rpmbuild"
+    _fedora_work_dir="$_kernel_work_folder_abs/rpmbuild"
 
     msg2 "Add patched files to the diff.patch"
-    (cd ${_kernel_work_folder_abs} && git add -- . ':!linux-tkg-rpmbuild')
+    (cd ${_kernel_work_folder_abs} && git add -- . ':!rpmbuild')
 
     msg2 "Building kernel RPM packages"
 
@@ -297,14 +296,34 @@ if [ "$1" = "install" ]; then
       _kernel_rpm="kernel-${_kernelname}*.rpm"
       # The headers are actually contained in the kernel-devel RPM and not the headers one...
       _kernel_devel_rpm="kernel-devel-${_kernelname}*.rpm"
+      _kernel_syms_rpm="kernel-syms-${_kernelname}*.rpm"
 
       cd RPMS
       if [ "$_distro" = "Fedora" ]; then
         sudo dnf install $_kernel_rpm $_kernel_devel_rpm
       elif [ "$_distro" = "Suse" ]; then
+        # It seems there is some weird behavior with relocking existing locks, so let's unlock first
+        sudo zypper removelock kernel-default-devel kernel-default kernel-devel kernel-syms
+
         msg2 "Some files from 'linux-glibc-devel' will be replaced by files from the custom kernel-hearders package"
         msg2 "To revert back to the original kernel headers do 'sudo zypper install -f linux-glibc-devel'"
-        sudo zypper install --allow-unsigned-rpm $_kernel_rpm $_kernel_devel_rpm
+        sudo zypper install --oldpackage --allow-unsigned-rpm $_kernel_rpm $_kernel_devel_rpm $_kernel_syms_rpm
+
+        # Let's lock post install
+        warning "By default, system kernel updates will overwrite your custom kernel."
+        warning "Adding a lock will prevent this but skip system kernel updates."
+        msg2 "You can remove the lock if needed with 'sudo zypper removelock kernel-default-devel kernel-default kernel-devel kernel-syms'"
+        read -p "Would you like to lock system kernel packages ? Y/[n]: " _lock
+        if [[ "$_lock" =~ ^(Y|y|Yes|yes)$ ]]; then
+          sudo zypper addlock kernel-default-devel kernel-default kernel-devel kernel-syms
+        fi
+      fi
+
+      if [ "$_distro" = "Suse" ]; then
+        msg2 "Creating initramfs"
+        sudo dracut --force --hostonly ${_dracut_options} --kver $_kernelname
+        msg2 "Updating GRUB"
+        sudo grub2-mkconfig -o /boot/grub2/grub.cfg
       fi
 
       msg2 "Install successful"
@@ -395,10 +414,6 @@ if [ "$1" = "install" ]; then
 
     msg2 "Installing kernel"
     sudo make install
-    msg2 "Creating initramfs"
-    sudo dracut --force --hostonly ${_dracut_options} --kver $_kernelname
-    msg2 "Updating GRUB"
-    sudo grub-mkconfig -o /boot/grub/grub.cfg
 
     if [ "$_distro" = "Gentoo" ]; then
 
@@ -415,6 +430,13 @@ if [ "$1" = "install" ]; then
       if [[ "$_continue" =~ ^(Y|y|Yes|yes)$ ]];then
         sudo emerge @module-rebuild --keep-going
       fi
+
+    else
+
+      msg2 "Creating initramfs"
+      sudo dracut --force --hostonly ${_dracut_options} --kver $_kernelname
+      msg2 "Updating GRUB"
+      sudo grub-mkconfig -o /boot/grub/grub.cfg
 
     fi
 

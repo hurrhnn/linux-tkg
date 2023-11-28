@@ -1,6 +1,6 @@
 ## linux-tkg
 
-This repository provides scripts to automatically download, patch and compile the Linux Kernel from [the official Linux git repository](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git), with a selection of patches aiming for better desktop/gaming experience. The provided patches can be enabled/disabled by editing the `customization.cfg` file and/or by following the interactive install script. You can also use your own patches (more information in `customization.cfg` file).
+This repository provides scripts to automatically download, patch and compile the Linux Kernel from [the official Linux git repository](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git), with a selection of patches aiming for better desktop/gaming experience. The provided patches can be enabled/disabled by editing the `customization.cfg` file and/or by following the interactive install script. You can use an external config file (default is `$HOME/.config/frogminer/linux-tkg.cfg`, tweakable with the `_EXT_CONFIG_PATH` variable in `customization.cfg`). You can also use your own patches (more information in `customization.cfg` file).
 
 ### Important information
 
@@ -15,21 +15,24 @@ This repository provides scripts to automatically download, patch and compile th
 ### Customization options
 #### Alternative CPU schedulers
 
-[CFS](https://en.wikipedia.org/wiki/Completely_Fair_Scheduler) is the only CPU scheduler available in the "vanilla" kernel sources. Its current implementation doesn't allow for injecting additional schedulers, and requires replacing it. Only one scheduler can be patched in at a time.
+[CFS](https://en.wikipedia.org/wiki/Completely_Fair_Scheduler) is the only CPU scheduler available in the "vanilla" kernel sources ≤ 6.5.
+[EEVDF](https://lwn.net/Articles/925371/) is the only CPU scheduler available in the "vanilla" kernel sources ≥ 6.6.
+
+Its current implementation doesn't allow for injecting additional schedulers, and requires replacing it. Only one scheduler can be patched in at a time.
 
 Alternative schedulers are available to you in linux-tkg:
 - Project C / PDS & BMQ by Alfred Chen: [blog](http://cchalpha.blogspot.com/ ), [code repository](https://gitlab.com/alfredchen/projectc)
 - MuQSS by Con Kolivas : [blog](http://ck-hack.blogspot.com/), [code repository](https://github.com/ckolivas/linux)
 - CacULE by Hamad Marri - CFS based : [code repository](https://github.com/hamadmarri/cacule-cpu-scheduler)
 - Task Type (TT) by Hamad Marri - CFS based : [code repository](https://github.com/hamadmarri/TT-CPU-Scheduler)
-- BORE (Burst-Oriented Response Enhancer) by Masahito Suzuki - CFS based : [code repository](https://github.com/firelzrd/bore-scheduler)
+- BORE (Burst-Oriented Response Enhancer) by Masahito Suzuki - CFS/EEVDF based : [code repository](https://github.com/firelzrd/bore-scheduler)
 - Undead PDS : TkG's port of the pre-Project C "PDS-mq" scheduler by Alfred Chen. While PDS-mq got dropped with kernel 5.1 in favor of its BMQ evolution/rework, it wasn't on par with PDS-mq in gaming. "U" PDS still performed better in some cases than other schedulers, so it's been kept undead for a while.
 
 These alternative schedulers can offer a better performance/latency ratio for gaming and desktop use. The availability of each scheduler depends on the chosen Kernel version: the script will display what's available on a per-version basis.
 #### Default tweaks
 - Memory management and swapping tweaks
 - Scheduling tweaks
-- `CFS` tweaks
+- `CFS/EEVDF` tweaks
 - Using the ["Cake"](https://www.bufferbloat.net/projects/codel/wiki/CakeTechnical/) network queue management system
 - Using `vm.max_map_count=16777216` by default
 - Cherry-picked patches from [Clear Linux's patchset](https://github.com/clearlinux-pkgs/linux)
@@ -43,46 +46,15 @@ The `customization.cfg` file offers many toggles for extra tweaks:
 - Using [Modprobed-db](https://github.com/graysky2/modprobed-db)'s database can reduce the compilation time and produce a smaller kernel which will only contain the modules listed in it. **NOT recommended**
   - **Warning**: make sure to read [thoroughly about it first](https://wiki.archlinux.org/index.php/Modprobed-db) since it comes with caveats that can lead to an unbootable kernel.
 - "Zenify" patchset using core blk, mm and scheduler tweaks from Zen
-- [Anbox](https://wiki.archlinux.org/title/Anbox) support (See [Anbox usage](https://github.com/Frogging-Family/linux-tkg#anbox-usage))
 - `ZFS` FPU symbols (<5.9)
 - Overrides for missing ACS capabilities
+- [Waydroid](https://wiki.archlinux.org/title/Waydroid) support
+- [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) support
 - Provide own kernel `.config` file
 - ...
 #### User patches
 
-To apply your own patch files using the provided scripts, you will need to put them in a `linux5y-tkg-userpatches` folder -- `y` needs to be changed with the kernel version the patch works on, _e.g_ `linux510-tkg-userpatches` -- at the same level as the `PKGBUILD` file, with the `.mypatch` extension. The script will by default ask if you want to apply them, one by one. The option `_user_patches` should be set to `true` in the `customization.cfg` file for this to work.
-
-#### Anbox usage
-
-**As of kernel 5.18, ashmem was dropped, breaking anbox. Their old Android 7 base doesn't allow moving to memfd so it might take a while to fix. The newer WayDroid alternative moved to using memfd thanks to an easier to work with Android 10 base. It still depends on binderfs, which is supported on 5.18+, but ashmem isn't a requirement for it anymore. An ashmem dkms driver can be used to circumvent the issue, but it currently is problematic on 5.19 and is likely to require active maintenance going forward. If you can, consider moving to WayDroid.**
-
-When enabling the anbox support option, the `binder` and `ashmem` modules are built-in. You don't have to load them. However you'll need to mount binderfs :
-```shell
-sudo mkdir /dev/binderfs
-sudo mount -t binder binder /dev/binderfs
-```
-
-To make this persistent, you can create `/etc/tmpfiles.d/anbox.conf` with the following content :
-```
-d! /dev/binderfs 0755 root root
-```
-After which you can add the following to your `/etc/fstab` :
-```
-binder                         /dev/binderfs binder   nofail  0      0
-```
-
-Then, if needed, start the anbox service :
-```shell
-systemctl start anbox-container-manager.service
-```
-
-You can also enable the service for it to be auto-started on boot :
-```shell
-systemctl enable anbox-container-manager.service
-```
-
-You're set to run Anbox.
-If you prefer automatic setup you can install `anbox-support` from AUR which will take care of everything by itself.
+To apply your own patch files using the provided scripts, you will need to put them in a `linux<VERSION><PATCHLEVEL>-tkg-userpatches` folder -- where _VERSION_ and _PATCHLEVEL_ are the kernel version and patch level, as specified in [linux Makefile](https://github.com/torvalds/linux/blob/master/Makefile), the patch works on, _e.g_ `linux65-tkg-userpatches` -- at the same level as the `PKGBUILD` file, with the `.mypatch` extension. The script will by default ask if you want to apply them, one by one. The option `_user_patches` should be set to `true` in the `customization.cfg` file for this to work.
 
 
 ### Install procedure
@@ -103,9 +75,7 @@ The script will use a slightly modified Arch config from the `linux-tkg-config` 
 #### DEB (Debian, Ubuntu and derivatives) and RPM (Fedora, SUSE and derivatives) based distributions
 
 **Important notes:**
-- Some issues have been reported by both Fedora (see https://github.com/Frogging-Family/linux-tkg/issues/383) and Ubuntu (see https://github.com/Frogging-Family/linux-tkg/issues/436) users where stock kernels cannot boot any longer, the whereabouts are still not entirely clear (it does not seem to affect every user)
-  - Ubuntu: appears to be an initramfs generation issue
-  - Fedora: needs disabling then re-enabling SELINUX so one can boot
+An issue has been reported for Ubuntu where the stock kernel cannot boot properly any longer, the whereabouts are not entirely clear (only a single user reported that, see https://github.com/Frogging-Family/linux-tkg/issues/436).
 
 The interactive `install.sh` script will create, depending on the selected distro, `.deb` or `.rpm` packages, move them in the the subfolder `DEBS` or `RPMS` then prompts to install them with the distro's package manager.
 ```shell
